@@ -94,7 +94,7 @@ class FoodClassifier:
             with col1:
                 st.write(f"**{name}**")
                 st.write(FOOD_DESCRIPTIONS[name])
-                st.sidebar.image(url, caption=name, use_column_width=True)  # Display image in sidebar
+                st.sidebar.image(url, caption=name, use_container_width=True)  # Updated to use_container_width
             with col2:
                 if st.button("Try", key=f"btn_{name}"):
                     with st.spinner("Loading image..."):
