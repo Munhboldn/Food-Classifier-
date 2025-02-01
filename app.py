@@ -39,7 +39,7 @@ class FoodClassifier:
     def setup_page_config():
         st.set_page_config(
             page_title="Mongolian Food Classifier",
-            page_icon="🍲",
+            page_icon=None,
             layout="centered",
             initial_sidebar_state="expanded"
         )
@@ -78,16 +78,17 @@ class FoodClassifier:
         self.create_header()
         self.create_sidebar()
         self.handle_image_upload()
+        self.create_footer()
         
     def create_header(self):
-        st.title("🍲 Mongolian Food Classifier")
+        st.title("Mongolian Food Classifier")
         st.markdown("""
         Welcome to the Mongolian Food Classifier! This app uses machine learning to identify 
         traditional Mongolian dishes. Upload your own image or try our example images to get started.
         """)
         
     def create_sidebar(self):
-        st.sidebar.title("📸 Example Images")
+        st.sidebar.title("Example Images")
         st.sidebar.write("Click on an image to try it out!")
         
         for name, url in EXAMPLE_IMAGES.items():
@@ -120,7 +121,7 @@ class FoodClassifier:
             self.process_image(st.session_state.image)
             
     def process_image(self, image: Image):
-        st.image(image, caption='Selected Image', use_container_width=True)  # Updated parameter here
+        st.image(image, caption='Selected Image', use_container_width=True)
         
         with st.spinner("Analyzing image..."):
             time.sleep(0.5)  # Add slight delay for better UX
@@ -141,6 +142,28 @@ class FoodClassifier:
             except Exception as e:
                 st.error(f"Error processing image: {str(e)}")
                 st.write("Please try uploading a different image.")
+
+    def create_footer(self):
+        st.markdown("---")
+        col1, col2, col3 = st.columns([1, 2, 1])
+        
+        with col2:
+            st.markdown(
+                """
+                <div style='text-align: center'>
+                    <p>Created by <a href="https://github.com/Munhboldn">Munkhbold Nyamdorj</a></p>
+                    <p>
+                        <a href="https://github.com/Munhboldn/Food-Classifier-" target="_blank">
+                            <img src="https://img.shields.io/github/stars/Munhboldn/Food-Classifier-?style=social" alt="GitHub stars">
+                        </a>
+                    </p>
+                    <p style='font-size: 0.875em; color: #666;'>
+                        Powered by FastAI & Streamlit | Version 1.0.0
+                    </p>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
 
 def main():
     classifier = FoodClassifier()
