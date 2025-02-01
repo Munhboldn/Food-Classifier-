@@ -32,24 +32,27 @@ if not os.path.exists(DESTINATION):
 # 🎯 Load Model
 learn = load_learner(DESTINATION)
 
-# 🖼️ Load Example Images (From GitHub) - Corrected the URLs
+# 🖼️ Load Example Images (From GitHub)
 EXAMPLE_IMAGES = {
-    "Buuz": "https://raw.githubusercontent.com/Munhboldn/Food-Classifier/main/Example_Images/Buuz.jpg",
-    "Khuushuur": "https://raw.githubusercontent.com/Munhboldn/Food-Classifier/main/Example_Images/Khuushuur.jpg",
-    "Tsuivan": "https://raw.githubusercontent.com/Munhboldn/Food-Classifier/main/Example_Images/Tsuivan.jpg",
-    "Olivier Salad": "https://raw.githubusercontent.com/Munhboldn/Food-Classifier/main/Example_Images/Olivier%20Salad.jpg"
+    "Buuz": "https://raw.githubusercontent.com/Munhboldn/Food-Classifier-/main/Example_Images/Buuz.jpg",
+    "Khuushuur": "https://raw.githubusercontent.com/Munhboldn/Food-Classifier-/main/Example_Images/Khuushuur.jpg",
+    "Tsuivan": "https://raw.githubusercontent.com/Munhboldn/Food-Classifier-/main/Example_Images/Tsuivan.jpg",
+    "Olivier Salad": "https://raw.githubusercontent.com/Munhboldn/Food-Classifier-/main/Example_Images/Olivier%20Salad.jpg"
 }
 
 # 📌 Show Example Images in Sidebar
 st.sidebar.title("Example Images")
 st.sidebar.write("Drag & drop these images to test!")
 
+# Try to fetch and display each example image
 for name, url in EXAMPLE_IMAGES.items():
-    response = requests.get(url)
-    if response.status_code == 200:
+    try:
+        # Check if the image is accessible
+        response = requests.get(url)
+        response.raise_for_status()  # Will raise an exception for non-2xx responses
         st.sidebar.image(url, caption=name, use_container_width=True)  # Use the new parameter
-    else:
-        st.sidebar.warning(f"Failed to load {name}.")
+    except requests.exceptions.RequestException as e:
+        st.sidebar.warning(f"Failed to load {name}. Error: {str(e)}")
 
 # 📢 App Header
 st.title("🍲 Mongolian Food Classifier")
