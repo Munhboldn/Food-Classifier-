@@ -33,6 +33,7 @@ class FoodClassifier:
     def __init__(self):
         self.setup_page_config()
         self.fix_windows_paths()
+        self.customize_theme()
         self.model = self.load_model()
         
     @staticmethod
@@ -43,6 +44,20 @@ class FoodClassifier:
             layout="centered",
             initial_sidebar_state="expanded"
         )
+    
+    @staticmethod
+    def customize_theme():
+        st.markdown("""
+            <style>
+            .stButton>button {
+                width: 100%;
+                border-radius: 5px;
+            }
+            .stProgress > div > div > div {
+                background-color: #4CAF50;
+            }
+            </style>
+        """, unsafe_allow_html=True)
         
     @staticmethod
     def fix_windows_paths():
