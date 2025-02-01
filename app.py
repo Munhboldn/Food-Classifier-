@@ -15,7 +15,7 @@ plt = platform.system()
 if plt == 'Windows': pathlib.PosixPath = pathlib.WindowsPath
 
 # 🔥 Google Drive File ID and Local Path
-FILE_ID = ''1AmQcU0FoqwZvgTNHMhHGHI-XwH1u03eN'  # Replace with your Google Drive file ID
+FILE_ID = '1AmQcU0FoqwZvgTNHMhHGHI-XwH1u03eN'  # Replace with your Google Drive file ID
 DESTINATION = 'mongolian_food_classifier.pkl'  # Local path to save the model
 
 # 📥 Function to Download Model from Google Drive
