@@ -120,7 +120,7 @@ class FoodClassifier:
             self.process_image(st.session_state.image)
             
     def process_image(self, image: Image):
-        st.image(image, caption='Selected Image', use_column_width=True)
+        st.image(image, caption='Selected Image', use_container_width=True)  # Updated parameter here
         
         with st.spinner("Analyzing image..."):
             time.sleep(0.5)  # Add slight delay for better UX
