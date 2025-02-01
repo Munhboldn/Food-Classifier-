@@ -32,7 +32,7 @@ if not os.path.exists(DESTINATION):
 # 🎯 Load Model
 learn = load_learner(DESTINATION)
 
-# 🖼️ Load Example Images (From GitHub)
+# 🖼️ Load Example Images (From GitHub) - Corrected the URLs
 EXAMPLE_IMAGES = {
     "Buuz": "https://raw.githubusercontent.com/Munhboldn/Food-Classifier/main/Example_Images/Buuz.jpg",
     "Khuushuur": "https://raw.githubusercontent.com/Munhboldn/Food-Classifier/main/Example_Images/Khuushuur.jpg",
@@ -47,7 +47,7 @@ st.sidebar.write("Drag & drop these images to test!")
 for name, url in EXAMPLE_IMAGES.items():
     response = requests.get(url)
     if response.status_code == 200:
-        st.sidebar.image(url, caption=name, use_column_width=True)
+        st.sidebar.image(url, caption=name, use_container_width=True)  # Use the new parameter
     else:
         st.sidebar.warning(f"Failed to load {name}.")
 
@@ -68,7 +68,7 @@ if uploaded_file is not None:
     try:
         # Show Uploaded Image
         image = Image.open(uploaded_file)
-        st.image(image, caption='Uploaded Image', use_column_width=True)
+        st.image(image, caption='Uploaded Image', use_container_width=True)  # Use the new parameter
 
         # Make Prediction
         img = PILImage.create(uploaded_file)
