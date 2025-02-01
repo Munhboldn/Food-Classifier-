@@ -5,34 +5,16 @@ import pathlib
 import platform
 import os
 import requests
-import gdown  # A library to download files from Google Drive
+import gdown
+from typing import Dict, Tuple
+import time
 
-#  Streamlit Page Config
-st.set_page_config(page_title="Mongolian Food Classifier", page_icon="🍲", layout="centered")
+# Constants
+MODEL_INFO = {
+    "FILE_ID": "1AmQcU0FoqwZvgTNHMhHGHI-XwH1u03eN",
+    "DESTINATION": "mongolian_food_classifier.pkl"
+}
 
-#  Fix for Windows Paths
-plt = platform.system()
-if plt == 'Windows': pathlib.PosixPath = pathlib.WindowsPath
-
-#  Google Drive File ID and Local Path
-FILE_ID = '1AmQcU0FoqwZvgTNHMhHGHI-XwH1u03eN'  # Replace with your Google Drive file ID
-DESTINATION = 'mongolian_food_classifier.pkl'  # Local path to save the model
-
-#  Function to Download Model from Google Drive
-def download_file_from_google_drive(file_id, destination):
-    url = f"https://drive.google.com/uc?id={file_id}"
-    gdown.download(url, destination, quiet=False)
-
-#  Download Model if Not Exists
-if not os.path.exists(DESTINATION):
-    st.info("Downloading model from Google Drive...")
-    download_file_from_google_drive(FILE_ID, DESTINATION)
-    st.success("Model downloaded successfully!")
-
-#  Load Model
-learn = load_learner(DESTINATION)
-
-#  Load Example Images (From GitHub)
 EXAMPLE_IMAGES = {
     "Buuz": "https://raw.githubusercontent.com/Munhboldn/Food-Classifier-/main/Example_Images/Buuz.jpg",
     "Khuushuur": "https://raw.githubusercontent.com/Munhboldn/Food-Classifier-/main/Example_Images/Khuushuur.jpg",
@@ -40,55 +22,129 @@ EXAMPLE_IMAGES = {
     "Olivier Salad": "https://raw.githubusercontent.com/Munhboldn/Food-Classifier-/main/Example_Images/Olivier%20Salad.jpg"
 }
 
-#  Show Example Images in Sidebar
-st.sidebar.title("Example Images")
-st.sidebar.write("Click on an image to predict!")
+FOOD_DESCRIPTIONS = {
+    "Buuz": "A traditional Mongolian steamed dumpling filled with minced meat.",
+    "Khuushuur": "Deep-fried meat pastries, similar to empanadas.",
+    "Tsuivan": "Stir-fried noodles with meat and vegetables.",
+    "Olivier Salad": "A popular potato salad with vegetables and meat."
+}
 
-# Create buttons for each example image
-for name, url in EXAMPLE_IMAGES.items():
-    if st.sidebar.button(name):
-        # When a button is clicked, load the image for prediction
-        image = Image.open(requests.get(url, stream=True).raw)
-        st.session_state.image = image  # Store image in session_state
-        st.sidebar.success(f"Image for {name} loaded!")
-        break
-
-#  App Header
-st.title("🍲 Mongolian Food Classifier")
-st.write("Upload an image or click on the examples to predict!")
-
-#  File Uploader (Alternative for manually uploading images)
-uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "png", "jpeg"])
-
-# Use the session-stored image if clicked from the sidebar
-if 'image' in st.session_state:
-    st.image(st.session_state.image, caption='Example Image', use_container_width=True)
-    uploaded_file = None  # Disable manual upload when an image is selected
-
-#  Prediction Logic
-if uploaded_file is not None or 'image' in st.session_state:
-    try:
-        # Use the manually uploaded image or the image selected from the sidebar
-        if uploaded_file is not None:
-            image = Image.open(uploaded_file)
-        else:
-            image = st.session_state.image
-
-        # Display the selected image
-        st.image(image, caption='Uploaded Image', use_container_width=True)
-
-        # Make Prediction
+class FoodClassifier:
+    def __init__(self):
+        self.setup_page_config()
+        self.fix_windows_paths()
+        self.model = self.load_model()
+        
+    @staticmethod
+    def setup_page_config():
+        st.set_page_config(
+            page_title="Mongolian Food Classifier",
+            page_icon="🍲",
+            layout="centered",
+            initial_sidebar_state="expanded"
+        )
+        
+    @staticmethod
+    def fix_windows_paths():
+        if platform.system() == 'Windows':
+            pathlib.PosixPath = pathlib.WindowsPath
+            
+    def load_model(self) -> object:
+        if not os.path.exists(MODEL_INFO["DESTINATION"]):
+            with st.spinner("Downloading model from Google Drive..."):
+                self.download_model()
+        return load_learner(MODEL_INFO["DESTINATION"])
+    
+    @staticmethod
+    def download_model():
+        try:
+            url = f"https://drive.google.com/uc?id={MODEL_INFO['FILE_ID']}"
+            gdown.download(url, MODEL_INFO["DESTINATION"], quiet=False)
+            st.success("Model downloaded successfully!")
+        except Exception as e:
+            st.error(f"Error downloading model: {e}")
+            st.stop()
+    
+    def predict(self, image: Image) -> Tuple[str, float, Dict[str, float]]:
         img = PILImage.create(image)
-        pred, pred_idx, probs = learn.predict(img)
+        pred, pred_idx, probs = self.model.predict(img)
+        confidence_scores = {
+            category: float(prob) 
+            for category, prob in zip(self.model.dls.vocab, probs)
+        }
+        return str(pred), float(probs[pred_idx]), confidence_scores
+    
+    def create_ui(self):
+        self.create_header()
+        self.create_sidebar()
+        self.handle_image_upload()
+        
+    def create_header(self):
+        st.title("🍲 Mongolian Food Classifier")
+        st.markdown("""
+        Welcome to the Mongolian Food Classifier! This app uses machine learning to identify 
+        traditional Mongolian dishes. Upload your own image or try our example images to get started.
+        """)
+        
+    def create_sidebar(self):
+        st.sidebar.title("📸 Example Images")
+        st.sidebar.write("Click on an image to try it out!")
+        
+        for name, url in EXAMPLE_IMAGES.items():
+            col1, col2 = st.sidebar.columns([3, 1])
+            with col1:
+                st.write(f"**{name}**")
+                st.write(FOOD_DESCRIPTIONS[name])
+            with col2:
+                if st.button("Try", key=f"btn_{name}"):
+                    with st.spinner("Loading image..."):
+                        image = Image.open(requests.get(url, stream=True).raw)
+                        st.session_state.image = image
+                        st.session_state.source = "example"
+                        
+    def handle_image_upload(self):
+        upload_col, preview_col = st.columns([2, 1])
+        
+        with upload_col:
+            uploaded_file = st.file_uploader(
+                "Upload your own image:",
+                type=["jpg", "png", "jpeg"],
+                help="Supported formats: JPG, JPEG, PNG"
+            )
+            
+            if uploaded_file:
+                st.session_state.image = Image.open(uploaded_file)
+                st.session_state.source = "upload"
+                
+        if 'image' in st.session_state:
+            self.process_image(st.session_state.image)
+            
+    def process_image(self, image: Image):
+        st.image(image, caption='Selected Image', use_column_width=True)
+        
+        with st.spinner("Analyzing image..."):
+            time.sleep(0.5)  # Add slight delay for better UX
+            try:
+                pred, confidence, all_scores = self.predict(image)
+                
+                # Display results
+                st.success(f"**Predicted Dish:** {pred}")
+                st.info(f"**Description:** {FOOD_DESCRIPTIONS.get(pred, 'No description available.')}")
+                
+                # Display confidence scores with a progress bar
+                st.subheader("Confidence Scores")
+                for category, score in sorted(all_scores.items(), key=lambda x: x[1], reverse=True):
+                    st.write(f"{category}")
+                    st.progress(score)
+                    st.write(f"Confidence: {score:.2%}")
+                    
+            except Exception as e:
+                st.error(f"Error processing image: {str(e)}")
+                st.write("Please try uploading a different image.")
 
-        # Show Results
-        st.success(f"**Prediction:** {pred}")
-        st.write("**Confidence Scores:**")
-        for i, category in enumerate(learn.dls.vocab):
-            st.write(f"- {category}: {probs[i]:.4f}")
+def main():
+    classifier = FoodClassifier()
+    classifier.create_ui()
 
-    except Exception as e:
-        st.error(f"Error: {e}. Please upload a valid image.")
-
-else:
-    st.info("Upload an image or click on one of the examples to get started.")
+if __name__ == "__main__":
+    main()
