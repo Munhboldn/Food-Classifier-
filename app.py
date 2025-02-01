@@ -42,39 +42,43 @@ EXAMPLE_IMAGES = {
 
 # 📌 Show Example Images in Sidebar
 st.sidebar.title("Example Images")
-st.sidebar.write("Drag & drop these images to test!")
+st.sidebar.write("Click on an image to predict!")
 
-# Try to fetch and display each example image
+# Create buttons for each example image
 for name, url in EXAMPLE_IMAGES.items():
-    try:
-        # Check if the image is accessible
-        response = requests.get(url)
-        response.raise_for_status()  # Will raise an exception for non-2xx responses
-        st.sidebar.image(url, caption=name, use_container_width=True)  # Use the new parameter
-    except requests.exceptions.RequestException as e:
-        st.sidebar.warning(f"Failed to load {name}. Error: {str(e)}")
+    if st.sidebar.button(name):
+        # When a button is clicked, load the image for prediction
+        image = Image.open(requests.get(url, stream=True).raw)
+        st.session_state.image = image  # Store image in session_state
+        st.sidebar.success(f"Image for {name} loaded!")
+        break
 
 # 📢 App Header
 st.title("🍲 Mongolian Food Classifier")
-st.write("Upload an image or drag one from the examples to predict!")
+st.write("Upload an image or click on the examples to predict!")
 
-# 🖼️ File Uploader
+# 🖼️ File Uploader (Alternative for manually uploading images)
 uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "png", "jpeg"])
 
-# 🗑️ Clear Button
-if st.button("Clear Image"):
-    st.session_state.uploader = None
-    st.experimental_rerun()
+# Use the session-stored image if clicked from the sidebar
+if 'image' in st.session_state:
+    st.image(st.session_state.image, caption='Example Image', use_container_width=True)
+    uploaded_file = None  # Disable manual upload when an image is selected
 
 # 🏆 Prediction Logic
-if uploaded_file is not None:
+if uploaded_file is not None or 'image' in st.session_state:
     try:
-        # Show Uploaded Image
-        image = Image.open(uploaded_file)
-        st.image(image, caption='Uploaded Image', use_container_width=True)  # Use the new parameter
+        # Use the manually uploaded image or the image selected from the sidebar
+        if uploaded_file is not None:
+            image = Image.open(uploaded_file)
+        else:
+            image = st.session_state.image
+
+        # Display the selected image
+        st.image(image, caption='Uploaded Image', use_container_width=True)
 
         # Make Prediction
-        img = PILImage.create(uploaded_file)
+        img = PILImage.create(image)
         pred, pred_idx, probs = learn.predict(img)
 
         # Show Results
@@ -87,4 +91,4 @@ if uploaded_file is not None:
         st.error(f"Error: {e}. Please upload a valid image.")
 
 else:
-    st.info("Upload an image to get started.")
+    st.info("Upload an image or click on one of the examples to get started.")
